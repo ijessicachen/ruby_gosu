@@ -3,7 +3,7 @@
 You'll notice this directory ordered into chapters, as this is my working space for the contents within the book *Learn Game Programming with Ruby* by Mark Sobkowicz.
 - btw the book is free [here](https://gameswithcode.com/games-with-code/)
 
-**important information**
+**important information**<br>
 Apple's built-in Ruby has issues so install with Homebrew
 - more information here: https://github.com/gosu/gosu/wiki/Getting-Started-on-OS-X
 - make sure to also follow the instructions about having ruby first in your PATH
@@ -24,6 +24,7 @@ For compilers to find ruby you may need to set:
   export LDFLAGS="-L/opt/homebrew/opt/ruby/lib"
   export CPPFLAGS="-I/opt/homebrew/opt/ruby/include"
 ```
+There was something about source code online but the link given in the book is a dead end, you should probably try to find this source code sometime.
 
 ## Helpful resources
 
