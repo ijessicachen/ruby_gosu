@@ -1,4 +1,11 @@
 # TO-DO
+# - another ruby you can click for points 
+# - an emerald you can click for more points
+# - a rock you can click for no points
+# NOTES
+# - there is definitely a smarter way to do 
+#   movement using local variables but that 
+#   can be done later
 
 require 'gosu'
 
@@ -19,6 +26,7 @@ class WhackARuby < Gosu::Window
     @edge = 30
     # are you playing?
     @playing = true
+    @start_time = 0
 
     # RUBY
     @image = Gosu::Image.new('ruby.png')
@@ -36,6 +44,21 @@ class WhackARuby < Gosu::Window
     # make the ruby blink
     #  visible when > 0, invisible otherwise
     @visible = 0
+
+    # ROCK
+    @rock = Gosu::Image.new('rock.png')
+    @rock_x = rand(100..700)
+    @rock_y = rand(100..500)
+    @rock_w = 400 * 0.1
+    @rock_h = 267 * 0.1
+
+    # velocity, wider range of speeds bc
+    #  it doesn't really matter
+    @rock_vx = rand(2.0..7.0) * @sign[rand(0..1)]
+    @rock_vy = rand(2.0..7.0) * @sign[rand(0..1)]
+
+    # blink
+    @rock_vis = 0
 
     # HAMMER
     @hammer_img = Gosu::Image.new('hammer.png')
@@ -61,6 +84,7 @@ class WhackARuby < Gosu::Window
     if @playing
       if (id == Gosu::MsLeft)
         if Gosu.distance(mouse_x, mouse_y, @x, @y) < 50 && @visible >= 0
+          # has hit the ruby
           @hit = 1 
           @score += 5
         else
@@ -68,39 +92,82 @@ class WhackARuby < Gosu::Window
           @score -= 1
         end
       end
+    else
+      # playing again, so reset
+      if (id == Gosu::KbSpace)
+        @playing = true
+        @visible = -10
+        @start_time = Gosu.milliseconds
+        @score = 0
+      end
     end
 
   end
 
   # draw and update loop at 60 times per second
+  
+  def move_ruby()
+
+    @x += @velocity_x
+    @y += @velocity_y
+
+    # bounce ruby off of walls and reandomize new velocity 
+    #  new velocity should still be in the other direction
+    # x wall
+    if @x + @width/2 > 800 - @edge
+      @velocity_x = rand(-5.0..-3.0)
+      @velocity_y = rand(3.0..5.0) * @sign[rand(0..1)]
+    elsif @x - @width/2 < 0 + @edge
+      @velocity_x = rand(3.0..5.0)
+      @velocity_y = rand(3.0..5.0) * @sign[rand(0..1)]
+    end
+    # y wall
+    if @y + @height/2 > 600 - @edge
+      @velocity_x = rand(3.0..5.0) * @sign[rand(0..1)]
+      @velocity_y = rand(-5.0..-3.0)
+    elsif @y - @height/2 < 0 + @edge
+      @velocity_x = rand(3.0..5.0) * @sign[rand(0..1)]
+      @velocity_y = rand(3.0..5.0)
+    end
+
+  end
+
+  def move_rock()
+
+    # move
+    @rock_x += @rock_vx
+    @rock_y += @rock_vy
+
+    # bounce
+    # x wall
+    if @rock_x + @rock_w/2 > 800 - @edge
+      @rock_vx = rand(-7.0..-2.0)
+      @rock_vy = rand(2.0..7.0) * @sign[rand(0..1)]
+    elsif @rock_x - @rock_w/2 < 0 + @edge
+      @rock_vx = rand(2.0..7.0)
+      @rock_vy = rand(2.0..7.0) * @sign[rand(0..1)]
+    end
+    # y wall
+    if @rock_y + @rock_h/2 > 600 - @edge
+      @rock_vx = rand(2.0..7.0) * @sign[rand(0..1)]
+      @rock_vy = rand(-7.0..-2.0)
+    elsif @rock_y - @rock_h/2 < 0 + @edge
+      @rock_vx = rand(2.0..7.0) * @sign[rand(0..1)]
+      @rock_vy = rand(2.0..7.0)
+    end
+    
+  end
 
   def update
     # this basically animates
 
     if @playing
 
-      # MOVE THE RUBY
-      @x += @velocity_x
-      @y += @velocity_y
-
-      # bounce ruby off of walls and reandomize new velocity 
-      #  new velocity should still be in the other direction
-      # x wall
-      if @x + @width/2 > 800 - @edge
-        @velocity_x = rand(-5.0..-3.0)
-        @velocity_y = rand(3.0..5.0) * @sign[rand(0..1)]
-      elsif @x - @width/2 < 0 + @edge
-        @velocity_x = rand(3.0..5.0)
-        @velocity_y = rand(3.0..5.0) * @sign[rand(0..1)]
-      end
-      # y wall
-      if @y + @height/2 > 600 - @edge
-        @velocity_x = rand(3.0..5.0) * @sign[rand(0..1)]
-        @velocity_y = rand(-5.0..-3.0)
-      elsif @y - @height/2 < 0 + @edge
-        @velocity_x = rand(3.0..5.0) * @sign[rand(0..1)]
-        @velocity_y = rand(3.0..5.0)
-      end
+      # MOVE THE OBJECTS
+      # ruby
+      move_ruby()
+      # rock
+      move_rock()
 
       # MAKE THE RUBY BLINK
       # chance to become visible for 30 frames after
@@ -112,9 +179,9 @@ class WhackARuby < Gosu::Window
       @visible = 40 if @visible < -180
 
       # TIME LIMIT
-      @time_left = (5 - (Gosu.milliseconds / 1000))
+      @time_left = (5 - ((Gosu.milliseconds - @start_time) / 1000))
       # GAME OVER?
-      @playing = false if @time_left < 0
+      @playing = false if @time_left <= 0
 
     end
     
@@ -161,7 +228,9 @@ class WhackARuby < Gosu::Window
 
     # game over message
     unless @playing
-      @font2.draw_text('Game Over', 310, 280, 3)
+      @font2.draw_text('Game Over', 310, 260, 3)
+      @font.draw_text("Press the Space Bar to play again", 260, 310, 3)
+      @font.draw_text("Final Score: " + @score.to_s, 340, 330, 3)
       @visible = 20
     end
 
