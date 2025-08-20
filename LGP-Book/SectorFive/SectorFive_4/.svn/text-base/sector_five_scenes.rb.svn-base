@@ -1,0 +1,319 @@
+ #START:initialize
+#START:require_credit
+require 'gosu'
+require_relative 'player'
+require_relative 'enemy'
+require_relative 'bullet'
+require_relative 'explosion'
+#END:initialize
+#START_HIGHLIGHT
+require_relative 'credit'
+#END_HIGHLIGHT
+#END:require_credit
+#START:initialize
+#START:max_enemies
+class SectorFive < Gosu::Window
+  WIDTH = 800
+  HEIGHT = 600
+  ENEMY_FREQUENCY = 0.05
+#END:initialize
+#START_HIGHLIGHT
+  MAX_ENEMIES = 100
+#END_HIGHLIGHT
+#END:max_enemies
+#START:initialize
+#START:music
+  def initialize
+    super(WIDTH, HEIGHT)
+    self.caption = "Sector Five"
+    @background_image = Gosu::Image.new('images/start_screen.png')
+    @scene = :start
+#END:initialize
+#START_HIGHLIGHT
+    @start_music = Gosu::Song.new('sounds/Lost Frontier.ogg')
+    @start_music.play(true)
+#END_HIGHLIGHT
+#START:initialize
+  end
+#END:music
+#END:initialize
+#START:tracking_variables
+#START:initialize_game
+#START:game_music
+#START:sound_effects
+  def initialize_game
+    @player = Player.new(self)
+    @enemies = []
+    @bullets = []
+    @explosions = []
+    @scene = :game
+#END:initialize_game
+#END:game_music
+#END:sound_effects
+#START_HIGHLIGHT
+#START:game_music
+#START:sound_effects
+    @enemies_appeared = 0
+    @enemies_destroyed = 0
+#END:sound_effects
+#END:game_music
+#END_HIGHLIGHT
+#START:game_music
+#END:tracking_variables
+#START_HIGHLIGHT
+#START:sound_effects
+    @game_music = Gosu::Song.new('sounds/Cephalopod.ogg')
+    @game_music.play(true)
+#END:sound_effects
+#END_HIGHLIGHT
+#END:game_music
+#START:sound_effects
+#START_HIGHLIGHT
+    @explosion_sound = Gosu::Sample.new('sounds/explosion.ogg')
+    @shooting_sound = Gosu::Sample.new('sounds/shoot.ogg')
+#END_HIGHLIGHT
+#START:initialize_game
+#START:tracking_variables
+#START:game_music
+  end
+#END:sound_effects
+#END:game_music
+#END:tracking_variables
+#END:initialize_game
+
+
+
+#START:update
+  def update
+    case @scene
+    when :game
+      update_game
+    when :end
+      update_end
+    end
+  end
+#END:update
+#START:update_game
+#START:initialize_end
+  def update_game
+    @player.turn_left if button_down?(Gosu::KbLeft)
+    @player.turn_right if button_down?(Gosu::KbRight)
+    @player.accelerate if button_down?(Gosu::KbUp)
+    @player.move
+#START:enemy_count
+    if rand < ENEMY_FREQUENCY
+      @enemies.push Enemy.new(self)
+#END:update_game
+#END:initialize_end
+#START_HIGHLIGHT
+#START:initialize_end
+      @enemies_appeared += 1
+#END:initialize_end
+#END_HIGHLIGHT
+#START:initialize_end
+#START:update_game
+    end
+#END:enemy_count
+    @enemies.each do |enemy|
+      enemy.move
+    end
+    @bullets.each do |bullet|
+      bullet.move
+    end
+#START:enemies_destroyed
+#START:explosion_sound
+    @enemies.dup.each do |enemy|
+      @bullets.dup.each do |bullet|
+        distance = Gosu.distance(enemy.x, enemy.y, bullet.x, bullet.y)
+        if distance < enemy.radius + bullet.radius
+          @enemies.delete enemy
+          @bullets.delete bullet
+          @explosions.push Explosion.new(self, enemy.x, enemy.y)
+#END:update_game
+#END:initialize_end
+#END:explosion_sound
+#START_HIGHLIGHT
+#START:initialize_end
+#START:explosion_sound
+          @enemies_destroyed += 1
+#END:explosion_sound
+#END:initialize_end
+#END_HIGHLIGHT
+#END:enemies_destroyed
+#START:explosion_sound
+#START_HIGHLIGHT
+          @explosion_sound.play
+#END_HIGHLIGHT
+#START:update_game
+#START:enemies_destroyed
+#START:initialize_end
+        end
+      end
+    end
+#END:explosion_sound
+#END:enemies_destroyed
+    @explosions.dup.each do |explosion|
+      @explosions.delete explosion if explosion.finished
+    end
+    @enemies.dup.each do |enemy|
+      if enemy.y > HEIGHT + enemy.radius
+        @enemies.delete enemy
+#END:update_game
+#START:update_game
+      end
+    end
+    @bullets.dup.each do |bullet|
+      @bullets.delete bullet unless bullet.onscreen?
+    end
+#END:update_game
+#START_HIGHLIGHT
+    initialize_end(:count_reached) if @enemies_appeared > MAX_ENEMIES
+    @enemies.each do |enemy|
+      distance = Gosu.distance(enemy.x, enemy.y, @player.x, @player.y)
+      initialize_end(:hit_by_enemy) if distance < @player.radius + enemy.radius   
+    end
+    initialize_end(:off_top) if @player.y < -@player.radius
+#END_HIGHLIGHT
+#START:update_game
+  end
+#END:initialize_end
+#END:update_game
+#START:draw
+  def draw
+    case @scene
+    when :start
+      draw_start
+    when :game
+      draw_game
+    when :end
+      draw_end
+    end
+  end
+#END:draw
+#START:draw_start
+  def draw_start
+    @background_image.draw(0,0,0)
+  end
+#END:draw_start
+#START:draw_game
+  def draw_game
+    @player.draw
+    @enemies.each do |enemy|
+      enemy.draw
+    end
+    @bullets.each do |bullet|
+      bullet.draw
+    end 
+    @explosions.each do |explosion|
+      explosion.draw
+    end
+  end
+#END:draw_game
+#START:button_down
+  def button_down(id)
+    case @scene
+    when :start
+      button_down_start(id)
+    when :game
+      button_down_game(id)
+    when :end
+      button_down_end(id)
+    end
+  end
+#END:button_down
+#START:button_down_start
+  def button_down_start(id)
+    initialize_game
+  end
+#END:button_down_start
+#START:button_down_game
+#START:shooting_sound
+  def button_down_game(id)
+    if id == Gosu::KbSpace
+      @bullets.push Bullet.new(self,  @player.x, @player.y, @player.angle)
+#END:button_down_game
+#START_HIGHLIGHT
+      @shooting_sound.play(0.3)
+#END_HIGHLIGHT
+#START:button_down_game
+    end
+  end
+#END:shooting_sound
+#END:button_down_game
+#START:button_down_end
+  def button_down_end(id)
+    if id == Gosu::KbP 
+      initialize_game
+    elsif id == Gosu::KbQ 
+      close
+    end
+  end
+#END:button_down_end
+#START:end
+#START:end_music
+  def initialize_end(fate)
+    case fate
+    when :count_reached
+      @message = "You made it!  You destroyed #{@enemies_destroyed} ships"
+      @message2= "and #{100 - @enemies_destroyed} reached the base."
+    when :hit_by_enemy
+      @message = "You were struck by an enemy ship."
+      @message2 = "Before your ship was destroyed, "
+      @message2 += "you took out #{@enemies_destroyed} enemy ships."
+    when :off_top
+      @message = "You got too close to the enemy mother ship."  
+      @message2 = "Before your ship was destroyed, "
+      @message2 += "you took out #{@enemies_destroyed} enemy ships."
+    end
+    @bottom_message = "Press P to play again, or Q to quit."
+    @message_font = Gosu::Font.new(28)
+    @credits = []
+    y = 700
+    File.open('credits.txt').each do |line|
+      @credits.push(Credit.new(self,line.chomp,100,y))
+      y+=30
+    end
+    @scene = :end
+#END:end
+#START_HIGHLIGHT
+    @end_music = Gosu::Song.new('sounds/FromHere.ogg')
+    @end_music.play(true)
+#END_HIGHLIGHT
+#START:end
+  end
+#END:end
+#END:end_music
+
+#START:update_end
+  def update_end
+    @credits.each do |credit|
+      credit.move
+    end
+    if @credits.last.y < 150
+      @credits.each do |credit|
+        credit.reset
+      end
+    end
+  end
+#END:update_end
+#START:draw_end
+  def draw_end
+    clip_to(50,140,700,360) do
+      @credits.each do |credit|
+        credit.draw
+      end
+    end 
+    draw_line(0,140,Gosu::Color::RED,WIDTH,140,Gosu::Color::RED)
+    @message_font.draw(@message,40,40,1,1,1,Gosu::Color::FUCHSIA)
+    @message_font.draw(@message2,40,75,1,1,1,Gosu::Color::FUCHSIA)
+    draw_line(0,500,Gosu::Color::RED,WIDTH,500,Gosu::Color::RED)
+    @message_font.draw(@bottom_message,180,540,1,1,1,Gosu::Color::AQUA)
+  end
+#END:draw_end
+#START:initialize
+end
+window = SectorFive.new
+window.show
+#END:initialize
+
+

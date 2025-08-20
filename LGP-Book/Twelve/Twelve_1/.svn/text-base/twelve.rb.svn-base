@@ -1,0 +1,54 @@
+#START:initialize
+require 'gosu'
+require_relative 'game'
+
+class Twelve < Gosu::Window
+
+  def initialize
+    super(640,640)
+    self.caption = 'Twelve'
+    @game = Game.new(self)
+  end
+#END:initialize
+#START:cursor
+  def needs_cursor?
+    true
+  end
+#END:cursor
+#START:button_up
+  def button_up(id)
+    if id == Gosu::MsLeft
+      @game.handle_mouse_up(mouse_x, mouse_y)
+    end
+  end
+#END:button_up
+#START:button_down
+  def button_down(id)
+    if id == Gosu::MsLeft
+       @game.handle_mouse_down(mouse_x, mouse_y)
+    end
+#END:button_down
+#START:play_again
+    if id == Gosu::KbR && button_down?(Gosu::KbLeftControl)
+       @game = Game.new(self)
+    end
+#END:play_again
+#START:button_down
+  end
+#END:button_down
+#START:update
+  def update
+    @game.handle_mouse_move(mouse_x, mouse_y)
+  end
+#END:update
+#START:initialize
+  def draw
+    @game.draw
+  end
+
+
+end
+
+window = Twelve.new
+window.show
+#END:initialize
