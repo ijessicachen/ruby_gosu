@@ -1,13 +1,11 @@
 # TO-DO
-# - an emerald you can click for more points
 # NOTES
-# - there is definitely a smarter way to do 
-#   movement using local variables but that 
-#   can be done later
 # - I think you can click on an object
 #   more than once once it appears for more
 #   points, but that's not necessarily a bad 
 #   thing
+# - haven't thoroughly checked the hit
+#   overlap but surely it works
 
 require 'gosu'
 
@@ -78,6 +76,24 @@ class WhackARuby < Gosu::Window
     # blink
     @ruby_vis = 0
 
+    # EMERALD
+    # smaller than the ruby for now
+    #  bc I don't have wifi to get 
+    #  a different image
+    @em = Gosu::Image.new('emerald.png')
+    @em_x = rand(100..700)
+    @em_y = rand(100..500)
+    @em_w = 400 * 0.07 
+    @em_h = 338 * 0.07
+
+    # velocity
+    # faster than the ruby on average
+    @em_vx = rand(4.0..6.0) * @sign[rand(0..1)]
+    @em_vy = rand(4.0..6.0) * @sign[rand(0..1)]
+
+    # blink
+    @em_vis = 0
+
     # HAMMER
     @hammer_img = Gosu::Image.new('hammer.png')
 
@@ -99,24 +115,48 @@ class WhackARuby < Gosu::Window
   def button_down(id)
     # detect mouse (or any key) clicks
 
+    # NEED TO ADD EMERALD HERE
+    dist_r1 = Gosu.distance(mouse_x, mouse_y, @x, @y)
+    dist_r2 = Gosu.distance(mouse_x, mouse_y, @ruby_x, @ruby_y)
+    dist_em = Gosu.distance(mouse_x, mouse_y, @em_x, @em_y)
+
     if @playing
       if (id == Gosu::MsLeft)
-        if (Gosu.distance(mouse_x, mouse_y, @x, @y) < 40 && @visible > 0) && (Gosu.distance(mouse_x, mouse_y, @ruby_x, @ruby_y) < 40 && @ruby_vis > 0)
+
+        @hit = 1
+
+        # HIT ALL 3
+        if (dist_r1 < 40 && @visible > 0) && (dist_r2 < 40 && @ruby_vis > 0) && (dist_em < 40 * 0.7 && @em_vis > 0)
+          # has hit em, ruby1, and ruby2
+          @score += 20
+
+        # HIT 2
+        elsif (dist_r1 < 40 && @visible > 0) && (dist_r2 < 40 && @ruby_vis > 0)
           # has hit both rubies
-          @hit = 1
           @score += 10
-        elsif Gosu.distance(mouse_x, mouse_y, @x, @y) < 40 && @visible > 0
+        elsif (dist_r1 < 40 && @visible > 0) && (dist_em < 40 * 0.7 && @em_vis > 0)
+          # has hit ruby1 and em
+          @score += 15
+        elsif (dist_r2 < 40 && @ruby_vis > 0) && (dist_em < 40 * 0.7 && @em_vis > 0)
+          # has hit ruby2 and em
+          @score += 15
+
+        # HIT 1
+        elsif dist_r1 < 40 && @visible > 0
           # has hit the 1st ruby
-          @hit = 1 
           @score += 5
-        elsif Gosu.distance(mouse_x, mouse_y, @ruby_x, @ruby_y) < 40 && @ruby_vis > 0
+        elsif dist_r2 < 40 && @ruby_vis > 0
           # has hit the 2nd ruby
-          @hit = 1
           @score += 5
+        elsif dist_em < 40 * 0.7 && @em_vis > 0
+          @score += 10
+
+        # NO HIT
         else
-          @hit = -1 
+          @hit -= 2 
           @score -= 1
         end
+
       end
     else
       # playing again, so reset
@@ -137,6 +177,10 @@ class WhackARuby < Gosu::Window
         @ruby_vis = -10
         @ruby_x = rand(100..700)
         @ruby_y = rand(100..500)
+        # emerald
+        @em_vis = -20
+        @em_x = rand(100..700)
+        @em_y = rand(100..500)
       end
     end
 
@@ -144,83 +188,27 @@ class WhackARuby < Gosu::Window
 
   # draw and update loop at 60 times per second
   
-  def move_ruby()
-
-    @x += @velocity_x
-    @y += @velocity_y
-
-    # bounce ruby off of walls and reandomize new velocity 
-    #  new velocity should still be in the other direction
-    # x wall
-    if @x + @width/2 > 800 - @edge
-      @velocity_x = rand(-5.0..-3.0)
-      @velocity_y = rand(3.0..5.0) * @sign[rand(0..1)]
-    elsif @x - @width/2 < 0 + @edge
-      @velocity_x = rand(3.0..5.0)
-      @velocity_y = rand(3.0..5.0) * @sign[rand(0..1)]
-    end
-    # y wall
-    if @y + @height/2 > 600 - @edge
-      @velocity_x = rand(3.0..5.0) * @sign[rand(0..1)]
-      @velocity_y = rand(-5.0..-3.0)
-    elsif @y - @height/2 < 0 + @edge
-      @velocity_x = rand(3.0..5.0) * @sign[rand(0..1)]
-      @velocity_y = rand(3.0..5.0)
-    end
-
-  end
-
-  def move_ruby2()
-
-    @ruby_x += @ruby_vx
-    @ruby_y += @ruby_vy
-
-    # bounce ruby off of walls and reandomize new velocity 
-    #  new velocity should still be in the other direction
-    # x wall
-    if @ruby_x + @ruby_w/2 > 800 - @edge
-      @ruby_vx = rand(-5.0..-3.0)
-      @ruby_vy = rand(3.0..5.0) * @sign[rand(0..1)]
-    elsif @ruby_x - @ruby_w/2 < 0 + @edge
-      @ruby_vx = rand(3.0..5.0)
-      @ruby_vy = rand(3.0..5.0) * @sign[rand(0..1)]
-    end
-    # y wall
-    if @ruby_y + @ruby_h/2 > 600 - @edge
-      @ruby_vx = rand(3.0..5.0) * @sign[rand(0..1)]
-      @ruby_vy = rand(-5.0..-3.0)
-    elsif @ruby_y - @ruby_h/2 < 0 + @edge
-      @ruby_vx = rand(3.0..5.0) * @sign[rand(0..1)]
-      @ruby_vy = rand(3.0..5.0)
-    end
-
-  end
-
-
-
-  def move_rock()
-
-    # move
-    @rock_x += @rock_vx
-    @rock_y += @rock_vy
+  def bounce_obj(x, y, w, h, vx, vy, low, high)
 
     # bounce
     # x wall
-    if @rock_x + @rock_w/2 > 800 - @edge
-      @rock_vx = rand(-7.0..-2.0)
-      @rock_vy = rand(2.0..7.0) * @sign[rand(0..1)]
-    elsif @rock_x - @rock_w/2 < 0 + @edge
-      @rock_vx = rand(2.0..7.0)
-      @rock_vy = rand(2.0..7.0) * @sign[rand(0..1)]
+    if x + w/2 > 800 - @edge
+      vx = rand(-1*high..-1*low)
+      vy = rand(low..high) * @sign[rand(0..1)]
+    elsif x - w/2 < 0 + @edge
+      vx = rand(low..high)
+      vy = rand(low..high) * @sign[rand(0..1)]
     end
     # y wall
-    if @rock_y + @rock_h/2 > 600 - @edge
-      @rock_vx = rand(2.0..7.0) * @sign[rand(0..1)]
-      @rock_vy = rand(-7.0..-2.0)
-    elsif @rock_y - @rock_h/2 < 0 + @edge
-      @rock_vx = rand(2.0..7.0) * @sign[rand(0..1)]
-      @rock_vy = rand(2.0..7.0)
+    if y + h/2 > 600 - @edge
+      vx = rand(low..high) * @sign[rand(0..1)]
+      vy = rand(-1*high..-1*low)
+    elsif y - h/2 < 0 + @edge
+      vx = rand(low..high) * @sign[rand(0..1)]
+      vy = rand(low..high)
     end
+
+    return vx, vy
     
   end
 
@@ -231,16 +219,29 @@ class WhackARuby < Gosu::Window
 
       # MOVE THE OBJECTS
       # ruby
-      move_ruby()
+      @x += @velocity_x
+      @y += @velocity_y
+      @velocity_x, @velocity_y = bounce_obj(@x, @y, @width, @height, @velocity_x, @velocity_y, 3.0, 5.0)
+
       # rock
-      move_rock()
+      @rock_x += @rock_vx
+      @rock_y += @rock_vy
+      @rock_vx, @rock_vy = bounce_obj(@rock_x, @rock_y, @rock_w, @rock_h, @rock_vx, @rock_vy, 2.0, 7.0)
+
       # ruby 2
-      move_ruby2()
+      @ruby_x += @ruby_vx
+      @ruby_y += @ruby_vy
+      @ruby_vx, @ruby_vy = bounce_obj(@ruby_x, @ruby_y, @ruby_w, @ruby_h, @ruby_vx, @ruby_vy, 3.0, 5.0)
+
+      # emerald
+      @em_x += @em_vx
+      @em_y += @em_vy
+      @em_vx, @em_vy = bounce_obj(@em_x, @em_y, @em_w, @em_h, @em_vx, @em_vy, 4.0, 6.0)
 
       # BLINK
 
       # ruby
-      # chance to become visible for 30 frames after
+      # chance to become visible for 40 frames after
       #  it has been invisible for at least 10 frames
       @visible -= 1
       @visible = 40 if @visible < -10 && rand < 0.01
@@ -260,10 +261,18 @@ class WhackARuby < Gosu::Window
       @ruby_vis = 40 if @ruby_vis < -10 && rand < 0.01
       @ruby_vis = 40 if @ruby_vis < -180
 
+      # emerald
+      # visible for same time but invisible for at
+      #  least 20 frames and the guarantee is after
+      #  5 seconds + rand chance a bit lower
+      @em_vis -= 1
+      @em_vis = 40 if @visible < -20 && rand < 0.007
+      @em_vis = 40 if @em_vis < -240
+
       # TIME LIMIT
       @time_left = (10 - ((Gosu.milliseconds - @start_time) / 1000))
       # GAME OVER?
-      @playing = false if @time_left < 0
+      @playing = false if @time_left <= 0
 
     end
     
@@ -284,6 +293,10 @@ class WhackARuby < Gosu::Window
     # ruby 2
     if @ruby_vis > 0
       @ruby.draw(@ruby_x-@ruby_w/2, @ruby_y-@ruby_h/2, 1, 0.1, 0.1)
+    end
+    # emerald
+    if @em_vis > 0
+      @em.draw(@em_x-@em_w/2, @em_y-@em_h/2, 1, 0.07, 0.07)
     end
 
     # draw the hammer
@@ -325,6 +338,7 @@ class WhackARuby < Gosu::Window
       @visible = 20
       @rock_vis = 20
       @ruby_vis = 20
+      @em_vis = 20
     end
 
   end
