@@ -1,11 +1,13 @@
 # TO-DO
-# - another ruby you can click for points 
 # - an emerald you can click for more points
-# - a rock you can click for no points
 # NOTES
 # - there is definitely a smarter way to do 
 #   movement using local variables but that 
 #   can be done later
+# - I think you can click on an object
+#   more than once once it appears for more
+#   points, but that's not necessarily a bad 
+#   thing
 
 require 'gosu'
 
@@ -26,6 +28,7 @@ class WhackARuby < Gosu::Window
     @edge = 30
     # are you playing?
     @playing = true
+    # time
     @start_time = 0
 
     # RUBY
@@ -60,6 +63,21 @@ class WhackARuby < Gosu::Window
     # blink
     @rock_vis = 0
 
+    # RUBY 2
+    # the same as the other ruby
+    @ruby = Gosu::Image.new('ruby.png')
+    @ruby_x = rand(100..700)
+    @ruby_y = rand(100..500)
+    @ruby_w = 400 * 0.1 
+    @ruby_h = 338 * 0.1 
+
+    # velocity
+    @ruby_vx = rand(3.0..5.0) * @sign[rand(0..1)]
+    @ruby_vy = rand(3.0..5.0) * @sign[rand(0..1)]
+
+    # blink
+    @ruby_vis = 0
+
     # HAMMER
     @hammer_img = Gosu::Image.new('hammer.png')
 
@@ -83,9 +101,17 @@ class WhackARuby < Gosu::Window
 
     if @playing
       if (id == Gosu::MsLeft)
-        if Gosu.distance(mouse_x, mouse_y, @x, @y) < 50 && @visible >= 0
-          # has hit the ruby
+        if (Gosu.distance(mouse_x, mouse_y, @x, @y) < 40 && @visible > 0) && (Gosu.distance(mouse_x, mouse_y, @ruby_x, @ruby_y) < 40 && @ruby_vis > 0)
+          # has hit both rubies
+          @hit = 1
+          @score += 10
+        elsif Gosu.distance(mouse_x, mouse_y, @x, @y) < 40 && @visible > 0
+          # has hit the 1st ruby
           @hit = 1 
+          @score += 5
+        elsif Gosu.distance(mouse_x, mouse_y, @ruby_x, @ruby_y) < 40 && @ruby_vis > 0
+          # has hit the 2nd ruby
+          @hit = 1
           @score += 5
         else
           @hit = -1 
@@ -95,10 +121,22 @@ class WhackARuby < Gosu::Window
     else
       # playing again, so reset
       if (id == Gosu::KbSpace)
+        # general
         @playing = true
-        @visible = -10
         @start_time = Gosu.milliseconds
         @score = 0
+        # ruby
+        @visible = -10
+        @x = rand(100..700)
+        @y = rand(100..500)
+        # rock
+        @rock_vis = -10
+        @rock_x = rand(100..700)
+        @rock_y = rand(100..500)
+        # ruby 2
+        @ruby_vis = -10
+        @ruby_x = rand(100..700)
+        @ruby_y = rand(100..500)
       end
     end
 
@@ -131,6 +169,34 @@ class WhackARuby < Gosu::Window
     end
 
   end
+
+  def move_ruby2()
+
+    @ruby_x += @ruby_vx
+    @ruby_y += @ruby_vy
+
+    # bounce ruby off of walls and reandomize new velocity 
+    #  new velocity should still be in the other direction
+    # x wall
+    if @ruby_x + @ruby_w/2 > 800 - @edge
+      @ruby_vx = rand(-5.0..-3.0)
+      @ruby_vy = rand(3.0..5.0) * @sign[rand(0..1)]
+    elsif @ruby_x - @ruby_w/2 < 0 + @edge
+      @ruby_vx = rand(3.0..5.0)
+      @ruby_vy = rand(3.0..5.0) * @sign[rand(0..1)]
+    end
+    # y wall
+    if @ruby_y + @ruby_h/2 > 600 - @edge
+      @ruby_vx = rand(3.0..5.0) * @sign[rand(0..1)]
+      @ruby_vy = rand(-5.0..-3.0)
+    elsif @ruby_y - @ruby_h/2 < 0 + @edge
+      @ruby_vx = rand(3.0..5.0) * @sign[rand(0..1)]
+      @ruby_vy = rand(3.0..5.0)
+    end
+
+  end
+
+
 
   def move_rock()
 
@@ -168,8 +234,12 @@ class WhackARuby < Gosu::Window
       move_ruby()
       # rock
       move_rock()
+      # ruby 2
+      move_ruby2()
 
-      # MAKE THE RUBY BLINK
+      # BLINK
+
+      # ruby
       # chance to become visible for 30 frames after
       #  it has been invisible for at least 10 frames
       @visible -= 1
@@ -178,10 +248,22 @@ class WhackARuby < Gosu::Window
       #  then 3 seconds (no longer up to chance)
       @visible = 40 if @visible < -180
 
+      # rock
+      # visible a bit longer than the ruby
+      @rock_vis -= 1
+      @rock_vis = 50 if @rock_vis < -10 && rand < 0.01
+      @rock_vis = 50 if @rock_vis < -180
+
+      # ruby 2
+      # same as ruby
+      @ruby_vis -= 1
+      @ruby_vis = 40 if @ruby_vis < -10 && rand < 0.01
+      @ruby_vis = 40 if @ruby_vis < -180
+
       # TIME LIMIT
-      @time_left = (5 - ((Gosu.milliseconds - @start_time) / 1000))
+      @time_left = (10 - ((Gosu.milliseconds - @start_time) / 1000))
       # GAME OVER?
-      @playing = false if @time_left <= 0
+      @playing = false if @time_left < 0
 
     end
     
@@ -194,6 +276,14 @@ class WhackARuby < Gosu::Window
     # ruby will only show if @visible > 0
     if @visible > 0
       @image.draw(@x-@width/2, @y-@height/2, 1, 0.1, 0.1)
+    end
+    # show rock
+    if @rock_vis > 0
+      @rock.draw(@rock_x-@rock_w/2, @rock_y-@rock_h/2, 1, 0.1, 0.1)
+    end
+    # ruby 2
+    if @ruby_vis > 0
+      @ruby.draw(@ruby_x-@ruby_w/2, @ruby_y-@ruby_h/2, 1, 0.1, 0.1)
     end
 
     # draw the hammer
@@ -231,7 +321,10 @@ class WhackARuby < Gosu::Window
       @font2.draw_text('Game Over', 310, 260, 3)
       @font.draw_text("Press the Space Bar to play again", 260, 310, 3)
       @font.draw_text("Final Score: " + @score.to_s, 340, 330, 3)
+      # show objects
       @visible = 20
+      @rock_vis = 20
+      @ruby_vis = 20
     end
 
   end
