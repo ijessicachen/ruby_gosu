@@ -5,6 +5,7 @@
 
 require 'gosu'
 require_relative 'player'
+require_relative 'enemy'
 
 class SectorFive < Gosu::Window
 
@@ -15,10 +16,12 @@ class SectorFive < Gosu::Window
     super(WIND_W, WIND_H)
     self.caption = 'Sector Five'
     @player = Player.new(self)
+    @enemy = Enemy.new(self)
   end
 
   def draw
     @player.draw
+    @enemy.draw
   end
 
   def update
@@ -29,6 +32,9 @@ class SectorFive < Gosu::Window
 
     @player.accelerate if button_down?(Gosu::KbUp)
     @player.move
+
+    # move the enemy
+    @enemy.move
   end
 
 end
