@@ -7,7 +7,8 @@ class Enemy
   def initialize(window)
     @radius = 20
     # random x
-    @x = rand(window.width - 2 * @radius) + @radius
+    # maybe make the sidebar a var
+    @x = rand(window.width - 50 - 2 * @radius) + @radius
     @y = 0
     @image = Gosu::Image.new("images/enemy.png")
   end
