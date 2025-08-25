@@ -1,22 +1,33 @@
 # TODO
+# - I still feel there should be a way
+#   to cap the speed at some point bc
+#   this ship goes way too fast
+# - you can change the move/direction
+#   variables into booleans bc they do
+#   exist after all
 # NOTES
 # - transitions are not the smoothest
 #   but they're good enough for me
+# - maybe make a sprite sheet instead 
+#   of getting 6 different images
 
 class Player
 
   # constants
-  ROT_SPEED = 3
+  ROT_SPEED = 5
   ACCEL = 2
   FRIC = 0.9
 
+  # get instance vars
+  attr_reader :x, :y, :angle, :radius
+
   def initialize(window)
-    @x = 200
-    @y = 200
+    @radius = 20 
+    @x = 400
+    @y = 570
     @vx = 0
     @vy = 0
     @angle = 0
-    @radius = 20 
 
     @force = 0
     @left = 0
