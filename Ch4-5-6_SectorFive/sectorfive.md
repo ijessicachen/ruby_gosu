@@ -26,13 +26,8 @@ Class Diagram format
 |@force|
 |@left|
 |@right|
-|@image|
-|@image\_m|
-|@image\_l|
-|@image\_r|
-|@image\_ml|
-|@image\_mr|
 |@window|
+|@ships|
 ||
 |initialize()|
 |draw()|

@@ -18,7 +18,9 @@ class Bullet
   end
 
   def draw
-    @image.draw(@x - @radius, @y - @radius, 0)
+    # can change colour for when you do enemy bullets?
+    col = 0xffffffff
+    @image.draw_mod(@x - @radius, @y - @radius, 0, 1, 1, col, col, col, col)
   end
 
 end

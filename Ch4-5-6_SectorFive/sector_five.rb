@@ -2,7 +2,6 @@
 # - Make WASD work (but you need to figure out
 #   what those keys are in Gosu first
 # - possibly slow down explosion frame rate
-# - make enemies fall at different speeds
 # - have enemies shoot at the player, preferably
 #   use the same class but make the bullets look
 #   different so it isn't too confusing
@@ -10,12 +9,18 @@
 #   when the game ends and other times it 
 #   follows through, just make whatever one you
 #   do consistent
-# NOTES
 # - instead of nerfing movement let's nerf 
 #   bullets. I should introduce bullet packs to
 #   incentivize movement and stop spam.
+# - on the topic of bullet packs, maybe also 
+#   add hearts you can get to get more hearts
+# NOTES
 # - maybe switch hearts into long rectangles
 #   to make it look better visually
+# - maybe make a win condition be hitting 
+#   enough enemy ships
+# - maybe introduce a potential boss at the
+#   end
 
 require 'gosu'
 require_relative 'player'
@@ -29,7 +34,7 @@ class SectorFive < Gosu::Window
   SIDEBAR = 50
   WIND_H = 600
   # chance of an enemy appearing
-  ENEM_FREQ = 0.01 
+  ENEM_FREQ = 0.007 
 
   def initialize
     super(WIND_W+SIDEBAR, WIND_H)
@@ -48,14 +53,19 @@ class SectorFive < Gosu::Window
     @heart_num = 10
     @font = Gosu::Font.new(10)
     @enem_sign = Gosu::Image.new("images/enemy.png")
+    @enem_count = 0
     @bul_sign = Gosu::Image.new("images/bullet.png")
+    @bul_left = 50
   end
 
   def button_down(id)
     # bullet appears at each click of
     #  the space bar
     if id == Gosu::KbSpace
-      @bullets.push Bullet.new(self, @player.x, @player.y, @player.angle)
+      if @bul_left > 0
+        @bullets.push Bullet.new(self, @player.x, @player.y, @player.angle)
+        @bul_left -= 1
+      end
     end 
   end
 
@@ -89,16 +99,16 @@ class SectorFive < Gosu::Window
 
   def collisions()
 
-    # check for collisions
+    # check for enemy collisions
     @enemies.dup.each do |enemy|
 
       # with the player's ship
       distance = Gosu.distance(enemy.x, enemy.y, @player.x, @player.y)
       if distance < enemy.radius + @player.radius
         @enemies.delete(enemy)
-        @end = true
         @explosions.push(Explosion.new(self, enemy.x, enemy.y, @end))
         @explosions.push(Explosion.new(self, @player.x, @player.y, @end))
+        @end = true
       end
 
       # with bullets
@@ -109,6 +119,7 @@ class SectorFive < Gosu::Window
           @enemies.delete(enemy)
           @bullets.delete(bullet)
           @explosions.push(Explosion.new(self, enemy.x, enemy.y, @end))
+          @enem_count += 1
         end
       end
 
@@ -118,6 +129,12 @@ class SectorFive < Gosu::Window
         if distance < enemy.radius + exp.radius
           @enemies.delete(enemy)
           @explosions.push(Explosion.new(self, enemy.x, enemy.y, @end))
+        end
+        # check for collisions between player and explosions
+        distance = Gosu.distance(exp.x, exp.y, @player.x, @player.y)
+        if distance < exp.radius + @player.radius
+          @explosions.push(Explosion.new(self, @player.x, @player.y, @end))
+          @end = true
         end
       end
 
@@ -154,10 +171,10 @@ class SectorFive < Gosu::Window
     # NEED TO ADD COUNT VARIABLES
     # count for enemies
     @enem_sign.draw(815, 10, 1, 0.5, 0.5)
-    @font.draw_text("0", 822, 30, 1)
+    @font.draw_text(@enem_count.to_s, 820, 30, 1)
     # count for bullets
     @bul_sign.draw(821, 50, 1)
-    @font.draw_text("0", 822, 60, 1)
+    @font.draw_text(@bul_left.to_s, 820, 60, 1)
 
   end
 

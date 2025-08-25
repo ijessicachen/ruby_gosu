@@ -2,14 +2,7 @@
 # - I still feel there should be a way
 #   to cap the speed at some point bc
 #   this ship goes way too fast
-# - you can change the move/direction
-#   variables into booleans bc they do
-#   exist after all
 # NOTES
-# - transitions are not the smoothest
-#   but they're good enough for me
-# - maybe make a sprite sheet instead 
-#   of getting 6 different images
 
 class Player
 
@@ -29,17 +22,12 @@ class Player
     @vy = 0
     @angle = 0
 
-    @force = 0
-    @left = 0
-    @right = 0
+    @force = false
+    @left = false
+    @right = false
 
     @window = window
-    @image = Gosu::Image.new('images/ship.png')
-    @image_m = Gosu::Image.new('images/move-ship.png')
-    @image_l = Gosu::Image.new('images/left-ship.png')
-    @image_r = Gosu::Image.new('images/right-ship.png')
-    @image_ml = Gosu::Image.new('images/move-left-ship.png')
-    @image_mr = Gosu::Image.new('images/move-right-ship.png')
+    @ships = Gosu::Image.load_tiles('images/ships.png', 45, 34)
   end
 
   def draw
@@ -48,46 +36,46 @@ class Player
     # CHECK IF YOU GOT THE DIRECTIONS RIGHT
     
     # weird cases (maybe make this impossible later)
-    if @force == 1 && @left == 1 && @right == 1
-      @image.draw_rot(@x, @y, 1, @angle)
-    elsif @right == 1 && @left == 1
-      @image.draw_rot(@x, @y, 1, @angle)
+    if @force && @left && @right
+      @ships[5].draw_rot(@x, @y, 1, @angle)
+    elsif @right && @left
+      @ships[5].draw_rot(@x, @y, 1, @angle)
 
     # move and turn
-    elsif @force == 1 && @left == 1
-      @image_ml.draw_rot(@x, @y, 1, @angle)
-    elsif @force == 1 && @right == 1
-      @image_mr.draw_rot(@x, @y, 1, @angle)
+    elsif @force && @left
+      @ships[4].draw_rot(@x, @y, 1, @angle)
+    elsif @force && @right
+      @ships[3].draw_rot(@x, @y, 1, @angle)
 
     # turn
-    elsif @left == 1
-      @image_l.draw_rot(@x, @y, 1, @angle)
-    elsif @right == 1
-      @image_r.draw_rot(@x, @y, 1, @angle)
+    elsif @left
+      @ships[2].draw_rot(@x, @y, 1, @angle)
+    elsif @right
+      @ships[1].draw_rot(@x, @y, 1, @angle)
 
     # move
-    elsif @force == 1
-      @image_m.draw_rot(@x, @y, 1, @angle)
+    elsif @force
+      @ships[0].draw_rot(@x, @y, 1, @angle)
 
     # still or slowing
     else
-      @image.draw_rot(@x, @y, 1, @angle)
+      @ships[5].draw_rot(@x, @y, 1, @angle)
     end
 
-    @force = 0
-    @left = 0
-    @right = 0
+    @force = false
+    @left = false
+    @right = false
 
   end
 
   # turn the ship
   def turn_right
     @angle += ROT_SPEED
-    @right = 1
+    @right = true
   end
   def turn_left
     @angle -= ROT_SPEED
-    @left = 1
+    @left = true
   end
 
   # accelerate
@@ -100,7 +88,7 @@ class Player
     #  just makes the pathing look wonky
     @vx += Gosu.offset_x(@angle, ACCEL)
     @vy += Gosu.offset_y(@angle, ACCEL)
-    @force = 1
+    @force = true
   end
 
   # move

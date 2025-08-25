@@ -1,6 +1,5 @@
 class Enemy
 
-  SPEED = 4
   # get instance vars
   attr_reader :x, :y, :radius
 
@@ -10,11 +9,12 @@ class Enemy
     # maybe make the sidebar a var
     @x = rand(window.width - 50 - 2 * @radius) + @radius
     @y = 0
+    @speed = rand(2.0..5.0)
     @image = Gosu::Image.new("images/enemy.png")
   end
 
   def move
-    @y += SPEED
+    @y += @speed
   end
 
   def draw
